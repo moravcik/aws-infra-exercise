@@ -80,3 +80,4 @@ Other userfule CDK commands:
 - Enable local development using [Serverless framework Offline plugin](https://www.serverless.com/plugins/serverless-offline)
 - Unit tests and/or e2e tests
 - Improve logging
+- Setup eslint, prettier, etc.
