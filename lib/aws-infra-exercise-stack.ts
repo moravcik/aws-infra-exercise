@@ -1,16 +1,38 @@
-import * as cdk from 'aws-cdk-lib';
+import { Duration, Stack, StackProps } from 'aws-cdk-lib';
+import { Runtime } from 'aws-cdk-lib/aws-lambda';
+import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
+import { Bucket, EventType } from 'aws-cdk-lib/aws-s3';
+import { LambdaDestination } from 'aws-cdk-lib/aws-s3-notifications';
 import { Construct } from 'constructs';
-// import * as sqs from 'aws-cdk-lib/aws-sqs';
+import { readFileSync } from 'fs';
+import * as yaml from 'js-yaml';
 
-export class AwsInfraExerciseStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+export class AwsInfraExerciseStack extends Stack {
+  constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
-    // The code that defines your stack goes here
+    const env: any = yaml.load(readFileSync('.env', 'utf8')) ?? {};
+    
+    const testBucketName = env.TEST_BUCKET_NAME || process.env.TEST_BUCKET_NAME;
+    const testLambdaName = env.TEST_LAMBDA_NAME || process.env.TEST_LAMBDA_NAME;
 
-    // example resource
-    // const queue = new sqs.Queue(this, 'AwsInfraExerciseQueue', {
-    //   visibilityTimeout: cdk.Duration.seconds(300)
-    // });
+    const testHandler = new NodejsFunction(this, 'TestHandler', {
+      entry: 'resources/test-lambda.ts',
+      functionName: testLambdaName, // optional
+      runtime: Runtime.NODEJS_18_X,
+      bundling: { externalModules: ['@aws-sdk'] },
+      memorySize: 256,
+      timeout: Duration.seconds(30),
+    });
+
+    const testBucket = new Bucket(this, 'TestBucket', {
+      bucketName: testBucketName // optional
+    });
+    testBucket.grantReadWrite(testHandler);
+    testBucket.addEventNotification(
+      EventType.OBJECT_CREATED, 
+      new LambdaDestination(testHandler),
+      { prefix: 'incoming' }
+    );
   }
 }
