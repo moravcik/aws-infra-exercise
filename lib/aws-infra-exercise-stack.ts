@@ -20,6 +20,7 @@ export class AwsInfraExerciseStack extends Stack {
       entry: 'resources/test-lambda.ts',
       functionName: testLambdaName, // optional
       runtime: Runtime.NODEJS_18_X,
+      // AWS SDK v3 is already bundled in Node.js v18 runtime
       bundling: { externalModules: ['@aws-sdk'] },
       memorySize: 256,
       timeout: Duration.seconds(30),
@@ -28,6 +29,7 @@ export class AwsInfraExerciseStack extends Stack {
     const testBucket = new Bucket(this, 'TestBucket', {
       bucketName: testBucketName // optional
     });
+
     testBucket.grantReadWrite(testHandler);
     testBucket.addEventNotification(
       EventType.OBJECT_CREATED, 
